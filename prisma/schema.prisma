@@ -10,6 +10,84 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-model Todo {
-  id Int @id @default(autoincrement())
+model Author {
+  id         Int      @id @default(autoincrement())
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+  username   String   @unique
+  name       String?
+  avatar_url String?
+  bio        String?
+  posts      Post[]
+
+  pinned_posts     Post[]    @relation("pinned_posts")
+  collections      Post[]    @relation("authors_collections")
+  bookmarked_posts Post[]    @relation("bookmarked_posts")
+  comments         Comment[] @relation("author_comment")
+}
+
+model Post {
+  id            Int        @id @default(autoincrement())
+  created_at    DateTime   @default(now())
+  updated_at    DateTime   @updatedAt
+  title         String
+  content       String
+  published     Boolean    @default(false)
+  viewed        Int        @default(0)
+  thumbnail_url String?
+  reading_time  String     @default("1 min read")
+  reactions     Reaction[]
+
+  author    Author @relation(fields: [author_id], references: [id])
+  author_id Int
+
+  pinned_in_author_profile Author[]  @relation("pinned_posts")
+  in_authors_collections   Author[]  @relation("authors_collections")
+  bookmarked_by_authors    Author[]  @relation("bookmarked_posts")
+  topics                   Topic[]
+  comments                 Comment[] @relation("post_comment")
+
+  @@unique([author_id])
+}
+
+model Topic {
+  id    Int    @id @default(autoincrement())
+  name  String
+  slug  String
+  posts Post[]
+
+  @@unique([name, slug])
+}
+
+model Comment {
+  id         Int      @id @default(autoincrement())
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+  content    String
+
+  parent            Comment? @relation("parent_comment", fields: [parent_comment_id], references: [id])
+  parent_comment    Comment? @relation("parent_comment")
+  parent_comment_id Int?     @unique
+
+  author    Author @relation("author_comment", fields: [author_id], references: [id])
+  author_id Int
+
+  post    Post @relation("post_comment", fields: [post_id], references: [id])
+  post_id Int
+
+  @@unique([author_id, post_id])
+}
+
+model Reaction {
+  id             Int    @id @default(autoincrement())
+  color          String
+  image_url      String
+  name           String
+  localized_name String
+  count          Int    @default(0)
+
+  post    Post? @relation(fields: [post_id], references: [id])
+  post_id Int?
+
+  @@unique([post_id])
 }
